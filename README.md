@@ -1,4 +1,5 @@
 # VibeCheck CAPTCHA Solver
+this is kinda of outdated vibecheck has changed a lot with there encyptiation atleast
 
 a solver to complelety fuck vibecheck
 
