@@ -228,5 +228,61 @@ The idea was that a Node.js sandbox `CSS`, `screen`, `navigator.onLine`, `docume
 "const screen = { width: 1920, height: 1080, colorDepth: 24, ... };\n"
 "const document = { body: true, ... };\n"
 ```
+### Patch 2:
 
+they added real DOM checks basically
+
+```javascript
+var inp = document.createElement('input');
+inp.name = 'vc_test_' + Math.random();
+document.body.appendChild(inp);
+var found = document.getElementsByName(inp.name);
+window.mfrr.push(found.length > 0 ? btoa(ts.substring(3, 6)) : 'err');
+var d = document.createElement('div');
+d.id = 'vc_' + Date.now();
+document.body.appendChild(d);
+window.mfrr.push(document.getElementById(d.id) ? btoa(ts.substring(6, 9)) : 'err');
+var c = document.createElement('canvas');
+var ctx = c.getContext('2d');
+ctx.fillStyle = 'rgb(47, 79, 79)';
+ctx.fillRect(0, 0, 1, 1);
+var px = ctx.getImageData(0, 0, 1, 1).data;
+window.mfrr.push(px[0] === 47 ? btoa(ts.substring(0, 3)) : 'err');
+var span = document.createElement('span');
+span.style.width = '100px';
+document.body.appendChild(span);
+var cs = window.getComputedStyle(span);
+window.mfrr.push(cs ? btoa(ts.substring(9, 12)) : 'err');
+var box = document.createElement('div');
+box.style.width = '50px';
+box.style.height = '25px';
+document.body.appendChild(box);
+var rect = box.getBoundingClientRect();
+window.mfrr.push(rect.width > 0 ? 'y' : 'n');
+```
+
+Our old sandbox was just a shallow object mock (`const document = { body: true }`) so that bascially 
+
+**How we fixed it:** Switched Libraies 
+
+```python
+"const { JSDOM } = require('jsdom');\n"
+"const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');\n"
+"const window = dom.window;\n"
+"const document = window.document;\n"
+"if (tag === 'canvas') {\n"
+"    el.getContext = () => ({\n"
+"      fillRect: () => {},\n"
+"      getImageData: () => {\n"
+"        const m = _fillStyle.match(/\\d+/g) || ['0','0','0'];\n"
+"        return { data: [+m[0], +m[1], +m[2], 255] };\n"
+"      }\n"
+"    });\n"
+"el.getBoundingClientRect = () => {\n"
+"    const w = parseFloat(el.style.width) || 0;\n"
+"    const h = parseFloat(el.style.height) || 0;\n"
+"    return { x:0, y:0, top:0, left:0, bottom:h, right:w, width:w, height:h };\n"
+
+"window.getComputedStyle = (el) => el.style;\n"
+```
 ---
