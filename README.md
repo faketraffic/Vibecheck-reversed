@@ -197,4 +197,36 @@ solve(
 
 ---
 
+## Patch Attempts
 
+### Patch 1:
+
+
+```javascript
+(typeof CSS !== 'undefined' && CSS.supports('display', 'grid'))
+    ? btoa(ts.substring(9, 12)) : 'e'
+
+
+(typeof navigator !== 'undefined' && navigator.onLine === true)
+    ? btoa(ts.substring(6, 9)) : 'f'
+
+
+(typeof screen !== 'undefined' && screen.colorDepth > 0)
+    ? btoa(ts.substring(3, 6)) : 'n'
+
+(function(){return
+'84830'})() === undefined ? 'y' : 'n'
+```
+
+The idea was that a Node.js sandbox `CSS`, `screen`, `navigator.onLine`, `document.body` etc so it would return the fallback values (`'e'`, `'f'`, `'n'`) instead of the real `btoa(...)` answers and the server would reject it
+
+**How we fixed it:** we just added the values:
+
+```python
+"const navigator = { userAgent: '...', onLine: true, platform: 'Win32', ... };\n"
+"const CSS = { supports: () => true };\n"
+"const screen = { width: 1920, height: 1080, colorDepth: 24, ... };\n"
+"const document = { body: true, ... };\n"
+```
+
+---
